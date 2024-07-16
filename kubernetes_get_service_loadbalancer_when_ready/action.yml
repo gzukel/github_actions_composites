@@ -1,0 +1,63 @@
+name: 'Wait for External IP and Save as Artifact'
+description: 'Waits for an external IP to be assigned to a Kubernetes service and saves it as an artifact.'
+author: 'Grant Zukel'
+inputs:
+  service_name:
+    description: 'The name of the Kubernetes service.'
+    required: true
+  namespace:
+    description: 'The namespace of the Kubernetes service.'
+    required: true
+    default: 'default'
+  timeout:
+    description: 'The timeout in seconds to wait for the external IP.'
+    required: true
+    default: 600
+  sleep_interval:
+    description: 'The interval in seconds between checks for the external IP.'
+    required: true
+    default: 10
+runs:
+  using: 'composite'
+  steps:
+    - name: "CHECKOUT:REPOSITORY"
+      uses: actions/checkout@v4
+
+    - name: "INSTALL:KUBECTL"
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: "WAIT:FOR:EXTERNAL:IP"
+      id: wait-for-ip
+      run: |
+        SERVICE_NAME="${{ inputs.service_name }}"
+        NAMESPACE="${{ inputs.namespace }}"
+        TIMEOUT=${{ inputs.timeout }}
+        SLEEP_INTERVAL=${{ inputs.sleep_interval }}
+        SERVICE_EXTERNAL_IP=""
+
+        end=$((SECONDS+TIMEOUT))
+        while [ $SECONDS -lt $end ]; do
+          SERVICE_EXTERNAL_IP=$(kubectl get svc $SERVICE_NAME -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -n "$SERVICE_EXTERNAL_IP" ]; then
+            echo "External IP assigned: $SERVICE_EXTERNAL_IP"
+            break
+          fi
+          echo "Waiting for external IP..."
+          sleep $SLEEP_INTERVAL
+        done
+
+        if [ -z "$SERVICE_EXTERNAL_IP" ]; then
+          echo "Error: Timed out waiting for external IP"
+          exit 1
+        fi
+
+        echo "SERVICE_EXTERNAL_IP=$SERVICE_EXTERNAL_IP" >> ${GITHUB_ENV}
+        echo $SERVICE_EXTERNAL_IP > SERVICE_EXTERNAL_IP.txt
+
+    - name: "UPLOAD:ARTIFACT"
+      uses: actions/upload-artifact@v2
+      with:
+        name: service-external-ip
+        path: SERVICE_EXTERNAL_IP.txt

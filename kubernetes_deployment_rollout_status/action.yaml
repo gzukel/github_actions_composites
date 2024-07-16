@@ -1,0 +1,42 @@
+name: 'WAIT:FOR:KUBERNETES:ROLLOUT'
+description: 'Checks and waits for the rollout status of a Kubernetes pod and fails if not successful.'
+inputs:
+  namespace:
+    description: 'The namespace of the Kubernetes deployment'
+    required: true
+  deployment:
+    description: 'The name of the Kubernetes deployment'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: "CHECKOUT:REPOSITORY"
+      uses: actions/checkout@v4
+
+    - name: "INSTALL:KUBECTL"
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: 'WAIT:FOR:ROLLOUT'
+      shell: bash
+      run: |
+        set -e
+
+        if [ -z "${{ inputs.namespace }}" ]; then
+          echo "Namespace is required"
+          exit 1
+        fi
+
+        if [ -z "${{ inputs.deployment }}" ]; then
+          echo "Deployment name is required"
+          exit 1
+        fi
+
+        NAMESPACE=${{ inputs.namespace }}
+        DEPLOYMENT=${{ inputs.deployment }}
+
+        echo "Waiting for rollout to complete..."
+        kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+
+
