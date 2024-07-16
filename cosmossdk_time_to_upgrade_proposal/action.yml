@@ -1,0 +1,46 @@
+name: "CALCULATE:PROPOSAL:DATETIME"
+description: 'This composite is used to calculate the datetime the upgrade will supposedly take place based on average block time..'
+inputs:
+  upgrade_height:
+    description: "The upgrade height you will be upgrading at."
+    default: "10"
+    required: false
+  rpc_url:
+    description: "the cosmosSDK RPC URL you want to use."
+    required: true
+  average_block_time:
+    description: "The calculated average block time of the network."
+    required: true
+  vote_period:
+    description: "The voting period for the network"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: gzukel/CosmosComposites
+        path: CosmosComposites
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 'pypy3.10'
+
+    - name: "REQUIREMENTS:INSTALL"
+      shell: bash
+      working-directory: "CosmosComposites/time_to_upgrade_proposal/"
+      run: |
+        pip install -r requirements.txt
+
+    - name: "EXECUTE:CALCULATION"
+      shell: bash
+      working-directory: "CosmosComposites/time_to_upgrade_proposal/"
+      env:
+        RPC_URL: "${{ inputs.rpc_url }}"
+        UPGRADE_HEIGHT: "${{ inputs.upgrade_height }}"
+        AVERAGE_BLOCK_TIME: "${{ inputs.average_block_time }}"
+        VOTING_PERIOD: "${{ inputs.vote_period }}"
+      run: |
+        python calculate_upgrade_date.py
+        
+

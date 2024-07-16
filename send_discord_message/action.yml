@@ -1,0 +1,52 @@
+name: "SEND:DISCORD:MESSAGE"
+description: 'Send discord message to specific channel'
+inputs:
+  discord_token:
+    description: "The discord token of your bot that is authorized."
+    required: true
+  discord_channel_id:
+    description: "The discord channel id"
+    required: true
+  discord_message:
+    description: "The discord message you want to send"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: gzukel/CosmosComposites
+        path: CosmosComposites
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 'pypy3.10'
+
+    - name: "REQUIREMENTS:INSTALL"
+      shell: bash
+      working-directory: "CosmosComposites/send_discord_message/"
+      run: |
+        pip install -r requirements.txt
+
+    - name: "SEND:DISCORD:MESSAGE"
+      shell: bash
+      working-directory: "CosmosComposites/send_discord_message/"
+      env:
+        DISCORD_CHANNEL_ID: "${{ inputs.discord_channel_id }}"
+        DISCORD_TOKEN: "${{ inputs.discord_token }}"
+        DISCORD_MESSAGE: "${{ inputs.discord_message}}"
+      run: |
+        discord_message_length=${#DISCORD_MESSAGE}
+        if (( discord_message_length > 2000 )); then
+            echo "******WARNING YOUR DISCORD MESSAGE IS ABOVE 2000 CHARACTERS WILL NOT SEND******"
+            echo "******WARNING YOUR DISCORD MESSAGE IS ABOVE 2000 CHARACTERS WILL NOT SEND******"
+            echo "******WARNING YOUR DISCORD MESSAGE IS ABOVE 2000 CHARACTERS WILL NOT SEND******"
+            echo "******WARNING YOUR DISCORD MESSAGE IS ABOVE 2000 CHARACTERS WILL NOT SEND******"
+            echo "******WARNING YOUR DISCORD MESSAGE IS ABOVE 2000 CHARACTERS WILL NOT SEND******"
+        else
+            python send_discord_message.py
+        fi
+        
+        
+
