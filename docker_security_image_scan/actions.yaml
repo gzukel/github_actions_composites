@@ -1,0 +1,27 @@
+name: "ANCHORE:DOCKER:SCAN"
+author: Grant Zukel
+branding:
+  icon: cloud
+  color: gray-dark
+description: "Anchore Docker Image Scan"
+inputs:
+  docker_image_name:
+    description: File you want to scan.
+    required: true
+  fail_pipeline_on_fail:
+    description: fail pipeline on scan.
+    default: "true"
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - name: "Anchore Docker Image Scan"
+    run: |
+        #!/usr/bin/env bash
+        echo ${{ inputs.docker_image_name }}
+        if [ "${{ inputs.fail_pipeline_on_fail }}" == "true" ]; then
+          curl -s https://ci-tools.anchore.io/inline_scan-latest | bash -s -- -f -p ${{ inputs.docker_image_name }}
+        else
+          curl -s https://ci-tools.anchore.io/inline_scan-latest | bash -s -- -p ${{ inputs.docker_image_name }}
+        fi
+    shell: bash
