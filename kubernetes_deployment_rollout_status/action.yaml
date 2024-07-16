@@ -1,5 +1,8 @@
 name: 'WAIT:FOR:KUBERNETES:ROLLOUT'
 description: 'Checks and waits for the rollout status of a Kubernetes pod and fails if not successful.'
+branding:
+  icon: cloud
+  color: gray-dark
 inputs:
   namespace:
     description: 'The namespace of the Kubernetes deployment'
@@ -7,7 +10,13 @@ inputs:
   deployment:
     description: 'The name of the Kubernetes deployment'
     required: true
+  kubeconfig_location:
+    description: 'The location of the kubernetes config file.'
+    required: true
+
 runs:
+  env:
+    KUBECONFIG: "${{ inputs.kubeconfig_location }}"
   using: 'composite'
   steps:
     - name: "CHECKOUT:REPOSITORY"

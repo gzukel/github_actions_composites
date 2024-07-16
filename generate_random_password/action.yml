@@ -1,6 +1,9 @@
 name: 'GENERATE:RANDOM:PASSWORD'
 description: 'Generates a random password and saves it as an artifact.'
 author: 'Grant Zukel'
+branding:
+  icon: cloud
+  color: gray-dark
 inputs:
   length:
     description: 'The length of the random password.'

@@ -1,6 +1,9 @@
 name: 'Wait for External IP and Save as Artifact'
 description: 'Waits for an external IP to be assigned to a Kubernetes service and saves it as an artifact.'
 author: 'Grant Zukel'
+branding:
+  icon: cloud
+  color: gray-dark
 inputs:
   service_name:
     description: 'The name of the Kubernetes service.'
@@ -17,7 +20,12 @@ inputs:
     description: 'The interval in seconds between checks for the external IP.'
     required: true
     default: 10
+  kubeconfig_location:
+    description: 'The location of the kubernetes config file.'
+    required: true
 runs:
+  env:
+    KUBECONFIG: "${{ inputs.kubeconfig_location }}"
   using: 'composite'
   steps:
     - name: "CHECKOUT:REPOSITORY"
