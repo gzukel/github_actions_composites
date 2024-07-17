@@ -2,9 +2,12 @@ import os
 import sys
 import json
 import boto3
-
 from distutils import util
+import logging
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class AWSRoute53RecordSet:
     """
@@ -34,11 +37,20 @@ class AWSRoute53RecordSet:
         Creates a new client object which wraps the connection to AWS.
         """
         if not self.client:
-            self.client = boto3.client(
-                "route53",
-                aws_access_key_id=self._get_env("INPUT_AWS_ACCESS_KEY_ID"),
-                aws_secret_access_key=self._get_env("INPUT_AWS_SECRET_ACCESS_KEY")
-            )
+            session_token = self._get_env("INPUT_AWS_SESSION_TOKEN", False)
+            if session_token:
+                self.client = boto3.client(
+                    "route53",
+                    aws_access_key_id=self._get_env("INPUT_AWS_ACCESS_KEY_ID"),
+                    aws_secret_access_key=self._get_env("INPUT_AWS_SECRET_ACCESS_KEY"),
+                    aws_session_token=session_token
+                )
+            else:
+                self.client = boto3.client(
+                    "route53",
+                    aws_access_key_id=self._get_env("INPUT_AWS_ACCESS_KEY_ID"),
+                    aws_secret_access_key=self._get_env("INPUT_AWS_SECRET_ACCESS_KEY")
+                )
             self.waiter = self.client.get_waiter("resource_record_sets_changed")
 
     def _set_comment(self):
@@ -127,5 +139,5 @@ try:
     o = AWSRoute53RecordSet()
     o.change()
 except Exception as e:
-    sys.stderr.write(str(e) + "\n")
+    logger.error(str(e))
     sys.exit(1)

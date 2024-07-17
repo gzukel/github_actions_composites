@@ -1,4 +1,4 @@
-Here's the updated README for your composite action that includes both using static AWS keys from secrets and assuming a role to pass temporary credentials as environment variables:
+Sure, here's the updated README for your composite action with the addition of handling `AWS_SESSION_TOKEN` for assuming roles:
 
 ```markdown
 # UPSERT:ROUTE53:DOMAIN
@@ -14,8 +14,6 @@ This GitHub Action checks the provided `input_address` to determine if it should
 ### `input_address`
 
 **Required** The IP or CNAME you want to add to the hostname. Default: `load_balancer_user.com`
-
-## Example Usage
 
 ### Using Static AWS Keys
 

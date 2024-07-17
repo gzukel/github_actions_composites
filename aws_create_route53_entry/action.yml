@@ -1,5 +1,5 @@
-name: "AWS:ROUTE53:CREATE:ENTRY"
-author: Grant Zukel
+name: AWS Route 53 Record Set
+author: Julian Pelizäus <jp@adformc.de>
 branding:
   icon: cloud
   color: gray-dark
@@ -11,6 +11,9 @@ inputs:
   aws_secret_access_key:
     description: The AWS secret access key
     required: true
+  aws_session_token:
+    description: The AWS session token (optional)
+    required: false
   aws_route53_hosted_zone_id:
     description: The id of the hosted zone
     required: true

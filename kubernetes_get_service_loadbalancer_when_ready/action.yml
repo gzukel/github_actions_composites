@@ -1,15 +1,18 @@
 name: 'Wait for External IP and Save as Artifact'
-description: 'Waits for an external IP to be assigned to a Kubernetes service and saves it as an artifact.'
+description: 'Waits for an external IP to be assigned to a Kubernetes service or ingress and saves it as an artifact.'
 author: 'Grant Zukel'
 branding:
   icon: cloud
   color: gray-dark
 inputs:
-  service_name:
-    description: 'The name of the Kubernetes service.'
+  resource_type:
+    description: 'The type of Kubernetes resource (service or ingress).'
+    required: true
+  resource_name:
+    description: 'The name of the Kubernetes resource (service or ingress).'
     required: true
   namespace:
-    description: 'The namespace of the Kubernetes service.'
+    description: 'The namespace of the Kubernetes resource.'
     required: true
     default: 'default'
   timeout:
@@ -21,7 +24,7 @@ inputs:
     required: true
     default: 10
   kubeconfig_location:
-    description: 'The location of the kubernetes config file.'
+    description: 'The location of the Kubernetes config file.'
     required: true
 runs:
   env:
@@ -39,33 +42,43 @@ runs:
     - name: "WAIT:FOR:EXTERNAL:IP"
       id: wait-for-ip
       run: |
-        SERVICE_NAME="${{ inputs.service_name }}"
+        RESOURCE_TYPE="${{ inputs.resource_type }}"
+        RESOURCE_NAME="${{ inputs.resource_name }}"
         NAMESPACE="${{ inputs.namespace }}"
         TIMEOUT=${{ inputs.timeout }}
         SLEEP_INTERVAL=${{ inputs.sleep_interval }}
-        SERVICE_EXTERNAL_IP=""
+        EXTERNAL_IP=""
 
         end=$((SECONDS+TIMEOUT))
         while [ $SECONDS -lt $end ]; do
-          SERVICE_EXTERNAL_IP=$(kubectl get svc $SERVICE_NAME -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          if [ -n "$SERVICE_EXTERNAL_IP" ]; then
-            echo "External IP assigned: $SERVICE_EXTERNAL_IP"
+          if [ "$RESOURCE_TYPE" == "service" ]; then
+            EXTERNAL_IP=$(kubectl get svc $RESOURCE_NAME -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          elif [ "$RESOURCE_TYPE" == "ingress" ]; then
+            EXTERNAL_IP=$(kubectl get ingress $RESOURCE_NAME -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          else
+            echo "Error: Unknown resource type $RESOURCE_TYPE"
+            exit 1
+          fi
+
+          if [ -n "$EXTERNAL_IP" ]; then
+            echo "External IP assigned: $EXTERNAL_IP"
             break
           fi
+
           echo "Waiting for external IP..."
           sleep $SLEEP_INTERVAL
         done
 
-        if [ -z "$SERVICE_EXTERNAL_IP" ]; then
+        if [ -z "$EXTERNAL_IP" ]; then
           echo "Error: Timed out waiting for external IP"
           exit 1
         fi
 
-        echo "SERVICE_EXTERNAL_IP=$SERVICE_EXTERNAL_IP" >> ${GITHUB_ENV}
-        echo $SERVICE_EXTERNAL_IP > SERVICE_EXTERNAL_IP.txt
+        echo "EXTERNAL_IP=$EXTERNAL_IP" >> ${GITHUB_ENV}
+        echo $EXTERNAL_IP > EXTERNAL_IP.txt
 
     - name: "UPLOAD:ARTIFACT"
       uses: actions/upload-artifact@v2
       with:
-        name: service-external-ip
-        path: SERVICE_EXTERNAL_IP.txt
+        name: external-ip
+        path: EXTERNAL_IP.txt
